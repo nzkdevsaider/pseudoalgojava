@@ -4,6 +4,7 @@ import java.util.Random;
 import java.util.Scanner;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collections;
 
 public class GeneradorNumerosPseudoaleatorios {
     private static final int MAX_N = 50;
@@ -172,14 +173,83 @@ public class GeneradorNumerosPseudoaleatorios {
     }
 
     private static boolean pruebaUniformidad(List<Double> numeros) {
-        // Implementar la prueba de uniformidad
-        // Este es un placeholder, deberá ser reemplazado por la implementación real
-        return true;
+        int n = numeros.size();
+        int k = (int) Math.sqrt(n);
+        int[] observados = new int[k];
+        double esperados = (double) n / k;
+
+        for (Double numero : numeros) {
+            int intervalo = (int) (numero * k);
+            if (intervalo == k)
+                intervalo--;
+            observados[intervalo]++;
+        }
+
+        double chiCuadrado = 0;
+        for (int i = 0; i < k; i++) {
+            chiCuadrado += Math.pow(observados[i] - esperados, 2) / esperados;
+        }
+
+        double valorCritico = obtenerValorCriticoChi(k - 1);
+
+        System.out.println("Estadistico y la frecuencia observada: " + chiCuadrado);
+        System.out.println("Valor crítico: " + valorCritico);
+
+        return chiCuadrado <= valorCritico;
+    }
+
+    // Chi-cuadrado
+    private static double obtenerValorCriticoChi(int gradosLibertad) {
+        double[] valoresCriticos = { 3.841, 5.991, 7.815, 9.488, 11.070, 12.592, 14.067, 15.507, 16.919 };
+        if (gradosLibertad > 0 && gradosLibertad <= valoresCriticos.length) {
+            return valoresCriticos[gradosLibertad - 1];
+        } else {
+            return Math.sqrt(2 * gradosLibertad) + 1.645;
+        }
     }
 
     private static boolean pruebaIndependencia(List<Double> numeros) {
-        // Implementar la prueba de independencia
-        // Este es un placeholder, deberá ser reemplazado por la implementación real
-        return true;
+        int n = numeros.size();
+        if (n < 10) {
+            System.out.println("Se necesitan al menos 10 números para realizar la prueba de independencia.");
+            return false;
+        }
+
+        List<Double> sortedNumbers = new ArrayList<>(numeros);
+        Collections.sort(sortedNumbers);
+        double mediana = (n % 2 == 0) ? (sortedNumbers.get(n / 2 - 1) + sortedNumbers.get(n / 2)) / 2.0
+                : sortedNumbers.get(n / 2);
+
+        int rachas = 1;
+        boolean encimaDeLaMediana = numeros.get(0) >= mediana;
+        for (int i = 1; i < n; i++) {
+            boolean actualEncimaDeLaMediana = numeros.get(i) >= mediana;
+            if (actualEncimaDeLaMediana != encimaDeLaMediana) {
+                rachas++;
+                encimaDeLaMediana = actualEncimaDeLaMediana;
+            }
+        }
+
+        int n1 = 0, n2 = 0;
+        for (Double numero : numeros) {
+            if (numero >= mediana)
+                n1++;
+            else
+                n2++;
+        }
+
+        double mediaRachas = ((2.0 * n1 * n2) / n) + 1;
+        double varianzaRachas = (2.0 * n1 * n2 * (2.0 * n1 * n2 - n)) / (n * n * (n - 1));
+
+        double z = (rachas - mediaRachas) / Math.sqrt(varianzaRachas);
+
+        double valorCritico = 1.96;
+
+        System.out.println("Número de rachas: " + rachas);
+        System.out.println("Media de rachas: " + mediaRachas);
+        System.out.println("Estadístico Z: " + z);
+        System.out.println("Valor crítico: ±" + valorCritico);
+
+        return Math.abs(z) <= valorCritico;
     }
 }
